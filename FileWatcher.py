@@ -17,7 +17,7 @@ class FileWatcher(Observer):
         self.observer.start()
         try:
             while True:
-                time.sleep(1)
+                time.sleep(0.1)
         except:
             self.observer.stop()
             print("Observer Stopped")
