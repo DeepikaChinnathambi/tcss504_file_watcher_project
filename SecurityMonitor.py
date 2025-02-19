@@ -1,4 +1,4 @@
-from observer import Observer
+from FileWatcherObserver import Observer
 from observable import Observable
 
 
