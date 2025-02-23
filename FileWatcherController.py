@@ -1,6 +1,6 @@
 from watchdog.events import FileSystemEventHandler
 from FileWatcherModel import FileModel
-
+from File import FileClass
 import time
 
 
@@ -11,6 +11,14 @@ class FileWatcherHandler(FileSystemEventHandler):
         self.model = model
         self.view = view
         self.observers = observers if observers else []
+
+        # watchdog has a weird thing where it will fire off two events for a single change...
+        # to alleviate doubleing up the display with two events, we can save the prior one and compare back to see if
+        # the same file/time/event is being fired off and if so then don't display it
+        self.cur_time = None
+        self.cur_date = None
+        self.src_path = None
+
 
     def notify_observers(self, file_metadata):
         """Notifies all registered observers with file metadata."""
@@ -39,14 +47,15 @@ class FileWatcherHandler(FileSystemEventHandler):
     #         self.notify_observers(file_metadata)
 
     def on_any_event(self, event):
-        if event.is_directory:
+        # a dumb way to do this but if the dir, time, and date are all the same then it is likely a duplicate event
+        if event.is_directory or (event.src_path==self.src_path and self.cur_time==time.strftime("%H:%M:%S") and self.cur_date==time.strftime("%Y-%m-%d")):
             return None
         else:
             # save it to the "warehouse" with event object , date and time
-            cur_time = time.strftime("%H:%M:%S")
-            cur_date = time.strftime("%Y-%m-%d")
-            self.model.update_file(event.src_path, event.event_type, cur_date, cur_time)
-            self.view.display_event(self.model.get_file_info(event.src_path))
-            #self.warehouse.push(file_obj)
-            print("Watchdog received %s event - %s at %s on %s" % (event.event_type, event.src_path, cur_time, cur_date))
+            self.cur_time = time.strftime("%H:%M:%S")
+            self.cur_date = time.strftime("%Y-%m-%d")
+
+            self.model.update_file(event.src_path, event.event_type, self.cur_date, self.cur_time)
+            self.view.display_event(event.src_path, event.event_type, self.cur_date, self.cur_time)
+            # print("Watchdog received %s event - %s at %s on %s" % (event.event_type, event.src_path, cur_time, cur_date))
 
