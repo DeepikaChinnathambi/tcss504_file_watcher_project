@@ -3,9 +3,10 @@ intending this to be the main script housing the tkinter gui and controller logi
 """
 
 import tkinter as tk
-from tkinter import filedialog, scrolledtext
+from tkinter import filedialog, scrolledtext, ttk
 import copy
 
+import FileWatcher
 from FileWatcher import *
 from FileWatcherModel import FileModel
 
@@ -15,8 +16,10 @@ class View():
         # Initialize the Tkinter root window
         self.event_display = None
         self.root = tk.Tk()
-        self.root.title("File Watcher")
-        self.root.geometry("600x400")
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(1, weight=1)
+        self.root.title("Guard Dog 🐶")
+        self.root.geometry("750x500")
 
         # Directory selection
         self.directory_path = tk.StringVar()
@@ -26,25 +29,74 @@ class View():
         self.model = FileModel()
         self.file_watcher = None  # Will be initialized when monitoring starts
 
+
     def create_widgets(self):
         """Create and arrange Tkinter widgets."""
-        # Directory selection frame
-        dir_frame = tk.Frame(self.root)
-        dir_frame.pack(pady=10)
+        # create main containters
+        topFrame = tk.Frame(self.root)
+        middleFrame = tk.Frame(self.root)
+        bottomFrame = tk.Frame(self.root)
 
-        tk.Label(dir_frame, text="Select Directory:").pack(side=tk.LEFT, padx=5)
-        tk.Entry(dir_frame, textvariable=self.directory_path, width=40).pack(side=tk.LEFT, padx=5)
-        tk.Button(dir_frame, text="Browse", command=self.browse_directory).pack(side=tk.LEFT, padx=5)
+        # add subsections in grid format
+        topFrame.grid(row=0, column=0, sticky=tk.NSEW)
+        topFrame.columnconfigure(0, weight=1)
+        topFrame.columnconfigure(1, weight=1)
+        topFrame.columnconfigure(2, weight=1)
+
+        middleFrame.grid(row=1, column=0,sticky=tk.NSEW)
+        middleFrame.columnconfigure(0, weight=1)
+        middleFrame.rowconfigure(0, weight=1)
+        middleFrame.columnconfigure(1, weight=1)
+        middleFrame.columnconfigure(2, weight=1)
+
+        bottomFrame.grid(row=2, column=0,sticky=tk.NSEW)
+        bottomFrame.columnconfigure(0, weight=1)
+        bottomFrame.columnconfigure(1, weight=1)
+        bottomFrame.columnconfigure(2, weight=1)
+
+        self.run_status_var = tk.StringVar()
+        self.run_status_var.set("Idle . . .")
+        self.saved_db = tk.StringVar()
+        self.saved_db.set('No Database Saved . . .')
+        run_status_label = tk.Label(topFrame, textvariable=self.run_status_var).grid(row=2, column=0, sticky=tk.W,  padx=5, pady=5)
+        saved_db_label = tk.Label(topFrame, textvariable=self.saved_db).grid(row=3, column=2, sticky=tk.EW,  padx=5, pady=5)
+        tk.Label(topFrame, text="Select Directory:").grid(row=0, column=0, sticky=tk.NSEW,  padx=5, pady=5)
+        tk.Entry(topFrame, textvariable=self.directory_path, width=50).grid(row=1, column=0, sticky=tk.NSEW,  padx=5, pady=5)
+        tk.Button(topFrame, text="Browse", command=self.browse_directory, width=15).grid(row=1, column=1, padx=5, pady=5,)
 
         # Start monitoring button
-        tk.Button(self.root, text="Start Monitoring", command=self.start_monitoring).pack(pady=10)
+        self.startbutton = tk.Button(topFrame, text="Start Monitoring", command=self.start_monitoring, width=15, bg='lightgreen')
+        self.startbutton.grid(row=0, column=2, padx=5, pady=5)
+        # Quit button
+        self.quitbutton = tk.Button(topFrame, text="Stop Monitoring", command=self.stop_monitoring, width=15, bg="salmon", state=tk.DISABLED)
+        self.quitbutton.grid(row=1, column=2, padx=5, pady=5)
+        # Save button
+        self.savebutton = tk.Button(topFrame, text="Save", command=self.save_log, width=15, bg='dodgerblue', state=tk.ACTIVE)
+        self.savebutton.grid(row=2, column=2, padx=5, pady=5)
 
         # Text box to display events
-        self.event_display = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, width=70, height=20)
-        self.event_display.pack(padx=10, pady=10)
+        self.event_display = ttk.Treeview(middleFrame, columns=("event", "time"), selectmode="browse")
+        self.event_display.heading("#0", text="File")
+        self.event_display.heading("event", text="Event")
+        self.event_display.heading("time", text="Time")
+        self.event_display.grid(row=0, columnspan=3,  padx=10, pady=10, sticky=tk.NSEW)
 
-        # Quit button
-        tk.Button(self.root, text="Quit", command=self.root.quit).pack(pady=10)
+        # Constructing vertical scrollbar
+        # with treeview
+        verscrlbar = ttk.Scrollbar(middleFrame,
+                                   orient ="vertical",
+                                   command = self.event_display.yview)
+        # Calling pack method w.r.to vertical
+        # scrollbar
+        verscrlbar.grid(row=0, column=3, sticky=tk.NS)
+        self.event_display.configure(xscrollcommand=verscrlbar.set)
+
+
+        # Save button
+        self.quit_savebutton = tk.Button(bottomFrame, text="Stop and Save", command=self.quit_and_save, width=15, bg='salmon')
+        self.quit_savebutton.grid(row=0, column=1, padx=25, pady=5, sticky=tk.EW)
+
+
 
     def browse_directory(self):
         """Open a directory dialog and set the selected directory path."""
@@ -52,157 +104,52 @@ class View():
         if selected_dir:
             self.directory_path.set(selected_dir)
 
+
     def start_monitoring(self):
         """Start monitoring the selected directory."""
         directory = self.directory_path.get()
         if directory:
-            self.display_event(f"Started monitoring: {directory}")
+            self.startbutton["state"] = tk.DISABLED
+            self.quitbutton['state'] = tk.ACTIVE
+            self.savebutton['state'] = tk.ACTIVE
+            self.run_status_var.set(f"Currently monitoring: {directory}")
             # Initialize and start the FileWatcher
-            self.file_watcher = FileWatcher(directory, self.model, self)
+            self.file_watcher = FileWatcher.FileWatcher(directory, self.model, self)
             self.file_watcher.start_watchdog_for_directory() # Start the watcher in a separate thread
         else:
             self.display_event("Please select a directory first.")
 
-    def display_event(self, message):
+
+    def stop_monitoring(self):
+        self.file_watcher.stop_watchdog()
+        self.run_status_var.set(f"Stopped Monitoring: {self.directory_path.get()}")
+        self.startbutton["state"] = tk.ACTIVE
+        self.quitbutton['state'] = tk.DISABLED
+        self.savebutton["state"] = tk.ACTIVE
+
+
+    def display_event(self, file_path, event_type, date, time):
         """Display a file event in the text box."""
-        print("Display event called")
-        if not isinstance(message, str):
-            message = str(message)  # Convert to string if it's not already
-        self.event_display.insert(tk.END, message + "\n")
-        self.event_display.yview(tk.END)  # Auto-scroll to the bottom
+        # print("Display event called")
+        # if not isinstance(file_path, str):
+        #     message = str(message)  # Convert to string if it's not already
+
+        self.event_display.insert("", tk.END, text=file_path, values=(event_type, time))
+        self.event_display.yview_moveto(1.0)  # Auto-scroll to the bottom
+
 
     def run(self):
         """Run the Tkinter main loop."""
         self.root.mainloop()
 
-    # def configure_run(self):
-    #     self.root = tk.Tk()
-    #     self.root.geometry("600x750")
-    #     self.root.title("Configure Dog Watcher")
-    #     topFrame = tk.Frame(self.root)
-    #     topLeftFrame = tk.Frame(topFrame)
-    #     topRightFrame = tk.Frame(topFrame)
-    #     bottomFrame = tk.Frame(self.root)
-    #     bottomLeftFrame = tk.Frame(bottomFrame)
-    #     bottomRightFrame = tk.Frame(bottomFrame)
-    #
-    #     # create subsection labels and make the text wrap
-    #     titleTop = tk.Label(self.root,
-    #                         text="Add directory to watch")
-    #     titleTop.bind('<Configure>', lambda e: titleTop.config(wraplength=titleTop.winfo_width()))
-    #     titleBottom = tk.Label(self.root,
-    #                            text="Event History")
-    #     titleBottom.bind('<Configure>', lambda e: titleBottom.config(wraplength=titleBottom.winfo_width()))
-    #
-    #     # add the subsection labels and frames to the GUI
-    #     titleTop.pack()
-    #     topFrame.pack()
-    #     titleBottom.pack()
-    #     bottomFrame.pack()
-    #     topLeftFrame.pack(side=tk.LEFT)
-    #     topRightFrame.pack(side=tk.RIGHT)
-    #     bottomLeftFrame.pack(side=tk.LEFT)
-    #     bottomRightFrame.pack(side=tk.RIGHT)
 
-        # # define callback functions for button and list events
-        # def onDisplayListSelect(event):
-        #     selection = event.widget.curselection()
-        #     if selection:
-        #         index = selection[0]
-        #         data = event.widget.selection_get().split('\n')
-        #         displayBox.configure(text=data)
-        #     else:  # if nothing is selected, clear the box
-        #         displayBox.configure(text="")
-        #
-        # def onAddButtonClick():
-        #     addVal = displayBox.selection_get().split('\n')
-        #     if addVal != "":
-        #         for a in addVal:
-        #             addedList.insert(addedList.size(), a)  # add selected engine to end of addedList
-        #
-        # def onAddButtonClickManual():
-        #     addVal = displayBox_manual.get("1.0", tk.END)
-        #     if addVal != "":
-        #         addVal = addVal
-        #         addedList.insert(addedList.size(), addVal)
-        #
-        # def onRemoveButtonClick():
-        #     selectedItem = addedList.curselection()
-        #     if selectedItem:
-        #         addedList.delete(selectedItem[0])
-        #
-        # def onUseButtonClick(rList):
-        #     # get all selected_engines in addList and add them to rList
-        #     rList['vals'] = []
-        #     vals = addedList.get(0, tk.END)
-        #     for val in vals:
-        #         rList['vals'].append(val)
-        #     self.root.destroy()  # close GUI
-        #
-        # # create list to display engine and a scrollbar
-        # displayList = tk.Listbox(bottomLeftFrame, height=25, selectmode='multiple')
-        # displayList.bind("<<ListboxSelect>>", onDisplayListSelect)
-        # scrollbar = tk.Scrollbar(bottomLeftFrame)
-        #
-        # # create list for added engine and a scrollbar
-        # addedList = tk.Listbox(bottomRightFrame, height=25, selectmode='multiple')
-        # scrollbar2 = tk.Scrollbar(bottomRightFrame)
-        #
-        # # add list and scrollbar to frame division on the correct sides
-        # displayList.pack(side=tk.LEFT)
-        # scrollbar.pack(side=tk.RIGHT, fill=tk.BOTH)
-        # # attach the scrollbar to the side of the list
-        # displayList.config(yscrollcommand=scrollbar.set)
-        # scrollbar.config(command=displayList.yview)
-        #
-        #
-        # # create a box to display the currently selected engine size and a button to finish selecting it
-        # displayBox = tk.Label(topLeftFrame, height=1, width=20, borderwidth=1, relief="solid", bg="white")
-        # addButton = tk.Button(topLeftFrame, height=1, width=15, text="Add engine(s)", command=onAddButtonClick)
-        #
-        # # create box and display to manually enter selected_engines
-        # displayBox_manual = tk.Label(topLeftFrame, height=1, width=20, borderwidth=1, relief="solid", bg="white")
-        # addButton_manual = tk.Button(topLeftFrame, height=1, width=20, text="Add non-listed engine",
-        #                              command=onAddButtonClickManual)
-        #
-        # # add elements for custom enteres engine list
-        # displayBox_manual.pack(side=tk.TOP, padx=10, pady=10)
-        # addButton_manual.pack(side=tk.TOP, padx=10, pady=10)
-        #
-        # # add elements to the display from engine list
-        # displayBox.pack(side=tk.TOP, padx=10, pady=10)
-        # addButton.pack(side=tk.TOP, padx=10, pady=10)
-        #
-        #
-        # # add list and scrollbar to frame division on the correct sides
-        # addedList.pack(side=tk.LEFT, pady=5)
-        # scrollbar2.pack(side=tk.RIGHT, fill=tk.BOTH, pady=5)
-        # addedList.config(yscrollcommand=scrollbar2.set)
-        # scrollbar2.config(command=addedList.yview)
-        #
-        # # dictionary to contain the list of selected selected_engines. Is a dictionary so that when it is passed to onUseButtonClick, it can be edited by the
-        # # function (tkinter doesn't support returning values from a callback function for some reason so I had to get creative)
-        # dir_events = {'vals': []}
-        #
-        # # define buttons to remove selected_engines from the added list, and to export the selected selected_engines and close the GUI
-        # useButton = tk.Button(topRightFrame, height=1, width=15, text="Run",
-        #                       command=lambda: onUseButtonClick(dir_events))
-        # removeButton = tk.Button(topRightFrame, height=1, width=15, text="Remove engine", command=onRemoveButtonClick)
-        # removeButton.pack(side=tk.TOP, padx=10, pady=10)
-        # useButton.pack(side=tk.BOTTOM, padx=10, pady=10)
-        #
-        # self.root.attributes('-topmost', True)
-        # self.root.after(50, lambda: self.root.focus_force())
-        # self.root.after(60, lambda: self.root.after_idle(self.root.attributes, '-topmost', False))
-        #
-        # # run the GUI
-        # self.root.mainloop()
-        #
-        #
-        # selected_engines = dict((k, v) for k, v in self.masterDict.items() if k in dir_events['vals'])
-        #
-        # return selected_engines
+    def save_log(self):
+        dbname = self.model.write_data()
+        self.saved_db.set(f"DB saved:\n{dbname}")
 
+    def quit_and_save(self):
+        self.save_log()
+        self.stop_monitoring()
 
 
 if __name__ == "__main__":
