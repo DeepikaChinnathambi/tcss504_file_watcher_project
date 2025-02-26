@@ -7,15 +7,15 @@ class FileClass:
     Note: formatting is Y-M-D and H-M-S
     class takes in an event object (looking for obj from watchdog), a date and time in the previously noted format
     """
-    def __init__(self, path, event_type=None, date=None, time=None):
-        self._path = path
+    def __init__(self, filename, event_type=None, date=None, time=None):
+        self._file_name = filename
         self._event_type = event_type
         self._date = date
         self._time = time
 
     @property
-    def path(self):
-        return str(self._path)
+    def file_name(self):
+        return str(self._file_name)
 
     @property
     def event_type(self):
@@ -31,7 +31,7 @@ class FileClass:
 
     def __str__(self):
         #return f"FileMetadata(path={self.path}, event_type={self.event_type}, timestamp={self.timestamp}, size={self.size})"
-        return f"File: {self.path}, Status: {self.event_type}, Time: {self.time}"
+        return f"File: {self.file_name}, Status: {self.event_type}, Time: {self.time}"
 
 
 
