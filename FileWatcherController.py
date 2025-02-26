@@ -1,3 +1,5 @@
+import os
+
 from watchdog.events import FileSystemEventHandler
 from FileWatcherModel import FileModel
 from File import FileClass
@@ -54,8 +56,9 @@ class FileWatcherHandler(FileSystemEventHandler):
             # save it to the "warehouse" with event object , date and time
             self.cur_time = time.strftime("%H:%M:%S")
             self.cur_date = time.strftime("%Y-%m-%d")
+            filename = os.path.basename(event.src_path)
 
-            self.model.update_file(event.src_path, event.event_type, self.cur_date, self.cur_time)
-            self.view.display_event(event.src_path, event.event_type, self.cur_date, self.cur_time)
+            self.model.update_file(filename, event.event_type, self.cur_date, self.cur_time)
+            self.view.display_event(filename, event.event_type, self.cur_date, self.cur_time)
             # print("Watchdog received %s event - %s at %s on %s" % (event.event_type, event.src_path, cur_time, cur_date))
 
