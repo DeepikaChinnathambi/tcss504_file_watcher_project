@@ -1,7 +1,7 @@
 """
 intending this to be the main script housing the tkinter gui and controller logic
 """
-
+import os
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk
 import copy
@@ -20,6 +20,7 @@ class View():
         self.root.rowconfigure(1, weight=1)
         self.root.title("Guard Dog 🐶")
         self.root.geometry("750x500")
+        self.root.resizable(False, False)
 
         # Directory selection
         self.directory_path = tk.StringVar()
@@ -57,8 +58,8 @@ class View():
         self.run_status_var = tk.StringVar()
         self.run_status_var.set("Idle . . .")
         self.saved_db = tk.StringVar()
-        self.saved_db.set('No Database Saved . . .')
-        run_status_label = tk.Label(topFrame, textvariable=self.run_status_var).grid(row=2, column=0, sticky=tk.W,  padx=5, pady=5)
+        # self.saved_db.set('No Database Saved . . .')
+        run_status_label = tk.Label(topFrame, textvariable=self.run_status_var, wraplength=700).grid(row=2, column=0, sticky=tk.W,  padx=5, pady=5)
         saved_db_label = tk.Label(topFrame, textvariable=self.saved_db).grid(row=3, column=2, sticky=tk.EW,  padx=5, pady=5)
         tk.Label(topFrame, text="Select Directory:").grid(row=0, column=0, sticky=tk.NSEW,  padx=5, pady=5)
         tk.Entry(topFrame, textvariable=self.directory_path, width=50).grid(row=1, column=0, sticky=tk.NSEW,  padx=5, pady=5)
@@ -71,15 +72,16 @@ class View():
         self.quitbutton = tk.Button(topFrame, text="Stop Monitoring", command=self.stop_monitoring, width=15, bg="salmon", state=tk.DISABLED)
         self.quitbutton.grid(row=1, column=2, padx=5, pady=5)
         # Save button
-        self.savebutton = tk.Button(topFrame, text="Save", command=self.save_log, width=15, bg='dodgerblue', state=tk.ACTIVE)
-        self.savebutton.grid(row=2, column=2, padx=5, pady=5)
+        # self.savebutton = tk.Button(topFrame, text="Save", command=self.save_log, width=15, bg='dodgerblue', state=tk.ACTIVE)
+        # self.savebutton.grid(row=2, column=2, padx=5, pady=5)
 
         # Text box to display events
-        self.event_display = ttk.Treeview(middleFrame, columns=("event", "time"), selectmode="browse")
+        self.event_display = ttk.Treeview(middleFrame, columns=("event", "date", "time"), selectmode="browse")
         self.event_display.heading("#0", text="File")
         self.event_display.heading("event", text="Event")
+        self.event_display.heading("date", text="Date")
         self.event_display.heading("time", text="Time")
-        self.event_display.grid(row=0, columnspan=3,  padx=10, pady=10, sticky=tk.NSEW)
+        self.event_display.grid(row=0, columnspan=3,  padx=5, pady=5, sticky=tk.NSEW)
 
         # Constructing vertical scrollbar
         # with treeview
@@ -93,8 +95,8 @@ class View():
 
 
         # Save button
-        self.quit_savebutton = tk.Button(bottomFrame, text="Stop and Save", command=self.quit_and_save, width=15, bg='salmon')
-        self.quit_savebutton.grid(row=0, column=1, padx=25, pady=5, sticky=tk.EW)
+        # self.quit_savebutton = tk.Button(bottomFrame, text="Stop and Save", command=self.quit_and_save, width=15, bg='salmon')
+        # self.quit_savebutton.grid(row=0, column=1, padx=25, pady=5, sticky=tk.EW)
 
 
 
@@ -111,11 +113,18 @@ class View():
         if directory:
             self.startbutton["state"] = tk.DISABLED
             self.quitbutton['state'] = tk.ACTIVE
-            self.savebutton['state'] = tk.ACTIVE
+            # self.savebutton['state'] = tk.ACTIVE
             self.run_status_var.set(f"Currently monitoring: {directory}")
             # Initialize and start the FileWatcher
-            self.file_watcher = FileWatcher.FileWatcher(directory, self.model, self)
+            directory_name = os.path.basename(directory)
+            self.model.set_table_name(directory_name)
+            all_files = self.model.get_all_files()
+            for file in all_files:
+                print(file.file_name, file.event_type, file.date, file.time)
+                self.display_event(file.file_name, file.event_type, file.date, file.time)
+            self.file_watcher = FileWatcher(directory, self.model, self)
             self.file_watcher.start_watchdog_for_directory() # Start the watcher in a separate thread
+
         else:
             self.display_event("Please select a directory first.")
 
@@ -125,16 +134,16 @@ class View():
         self.run_status_var.set(f"Stopped Monitoring: {self.directory_path.get()}")
         self.startbutton["state"] = tk.ACTIVE
         self.quitbutton['state'] = tk.DISABLED
-        self.savebutton["state"] = tk.ACTIVE
+        # self.savebutton["state"] = tk.ACTIVE
 
 
-    def display_event(self, file_path, event_type, date, time):
+    def display_event(self, file_name, event_type, date, time):
         """Display a file event in the text box."""
         # print("Display event called")
         # if not isinstance(file_path, str):
         #     message = str(message)  # Convert to string if it's not already
 
-        self.event_display.insert("", tk.END, text=file_path, values=(event_type, time))
+        self.event_display.insert("", tk.END, text=file_name, values=(event_type, date, time))
         self.event_display.yview_moveto(1.0)  # Auto-scroll to the bottom
 
 
