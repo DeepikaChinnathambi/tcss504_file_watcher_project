@@ -109,6 +109,9 @@ class View():
 
     def start_monitoring(self):
         """Start monitoring the selected directory."""
+        for row in self.event_display.get_children():
+            self.event_display.delete(row)
+
         directory = self.directory_path.get()
         if directory:
             self.startbutton["state"] = tk.DISABLED
