@@ -3,6 +3,7 @@ from DataWarehouse import DataWarehouse
 import sqlite3
 import time
 import threading
+from SecurityMonitor import *
 
 class FileModel:
     """Stores and manages file metadata."""
@@ -121,5 +122,12 @@ class FileModel:
 
 
         return dbname
+
+
+    def alert_security(self, db_file):
+        SecurityMonitor
+
+
+
 
 

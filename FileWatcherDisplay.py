@@ -20,7 +20,7 @@ class View():
         self.root.rowconfigure(1, weight=1)
         self.root.title("Guard Dog 🐶")
         self.root.geometry("750x500")
-        self.root.resizable(False, False)
+        # self.root.resizable(False, False)
 
         # Directory selection
         self.directory_path = tk.StringVar()
@@ -53,7 +53,7 @@ class View():
         bottomFrame.grid(row=2, column=0,sticky=tk.NSEW)
         bottomFrame.columnconfigure(0, weight=1)
         bottomFrame.columnconfigure(1, weight=1)
-        bottomFrame.columnconfigure(2, weight=1)
+        # bottomFrame.columnconfigure(2, weight=1)
 
         self.run_status_var = tk.StringVar()
         self.run_status_var.set("Idle . . .")
@@ -72,8 +72,8 @@ class View():
         self.quitbutton = tk.Button(topFrame, text="Stop Monitoring", command=self.stop_monitoring, width=15, bg="salmon", state=tk.DISABLED)
         self.quitbutton.grid(row=1, column=2, padx=5, pady=5)
         # Save button
-        # self.savebutton = tk.Button(topFrame, text="Save", command=self.save_log, width=15, bg='dodgerblue', state=tk.ACTIVE)
-        # self.savebutton.grid(row=2, column=2, padx=5, pady=5)
+        self.savebutton = tk.Button(topFrame, text="Save", command=self.save_log, width=15, bg='dodgerblue', state=tk.ACTIVE)
+        self.savebutton.grid(row=2, column=2, padx=5, pady=5)
 
         # Text box to display events
         self.event_display = ttk.Treeview(middleFrame, columns=("event", "date", "time"), selectmode="browse")
@@ -95,8 +95,12 @@ class View():
 
 
         # Save button
-        # self.quit_savebutton = tk.Button(bottomFrame, text="Stop and Save", command=self.quit_and_save, width=15, bg='salmon')
-        # self.quit_savebutton.grid(row=0, column=1, padx=25, pady=5, sticky=tk.EW)
+        self.quit_savebutton = tk.Button(bottomFrame, text="Stop and Save", command=self.quit_and_save, width=15, bg='dodgerblue')
+        self.quit_savebutton.grid(row=0, column=0, padx=25, pady=5, sticky=tk.EW)
+
+        # Save button
+        self.alert_button = tk.Button(bottomFrame, text="Alert Security Team", command=self.alert_security, width=15, bg='salmon')
+        self.alert_button.grid(row=0, column=1, padx=25, pady=5, sticky=tk.EW)
 
 
 
@@ -162,6 +166,13 @@ class View():
     def quit_and_save(self):
         self.save_log()
         self.stop_monitoring()
+
+
+    def alert_security(self):
+        pass
+
+
+
 
 
 if __name__ == "__main__":
