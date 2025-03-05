@@ -3,7 +3,7 @@ intending this to be the main script housing the tkinter gui and controller logi
 """
 import os
 import tkinter as tk
-from tkinter import filedialog, scrolledtext, ttk
+from tkinter import filedialog, scrolledtext, ttk,Menu
 import copy
 
 import FileWatcher
@@ -32,77 +32,119 @@ class View():
 
 
     def create_widgets(self):
-        """Create and arrange Tkinter widgets."""
-        # create main containters
-        topFrame = tk.Frame(self.root)
-        middleFrame = tk.Frame(self.root)
-        bottomFrame = tk.Frame(self.root)
+            """Create and arrange Tkinter widgets."""
 
-        # add subsections in grid format
-        topFrame.grid(row=0, column=0, sticky=tk.NSEW)
-        topFrame.columnconfigure(0, weight=1)
-        topFrame.columnconfigure(1, weight=1)
-        topFrame.columnconfigure(2, weight=1)
+            # Create menu bar
+            menu_bar = Menu(self.root)
+            self.root.config(menu=menu_bar)
 
-        middleFrame.grid(row=1, column=0,sticky=tk.NSEW)
-        middleFrame.columnconfigure(0, weight=1)
-        middleFrame.rowconfigure(0, weight=1)
-        middleFrame.columnconfigure(1, weight=1)
-        middleFrame.columnconfigure(2, weight=1)
+            # File Menu
+            file_menu = Menu(menu_bar, tearoff=0)
+            file_menu.add_command(label="Query Database", command=self.query_database)
+            file_menu.add_separator()
+            file_menu.add_command(label="Exit", command=self.root.quit)
+            menu_bar.add_cascade(label="File", menu=file_menu)
 
-        bottomFrame.grid(row=2, column=0,sticky=tk.NSEW)
-        bottomFrame.columnconfigure(0, weight=1)
-        bottomFrame.columnconfigure(1, weight=1)
-        # bottomFrame.columnconfigure(2, weight=1)
+            # Edit Menu
+            edit_menu = Menu(menu_bar, tearoff=0)
+            edit_menu.add_command(label="Preferences")
+            menu_bar.add_cascade(label="Edit", menu=edit_menu)
 
-        self.run_status_var = tk.StringVar()
-        self.run_status_var.set("Idle . . .")
-        self.saved_db = tk.StringVar()
-        # self.saved_db.set('No Database Saved . . .')
-        run_status_label = tk.Label(topFrame, textvariable=self.run_status_var, wraplength=700).grid(row=2, column=0, sticky=tk.W,  padx=5, pady=5)
-        saved_db_label = tk.Label(topFrame, textvariable=self.saved_db).grid(row=3, column=2, sticky=tk.EW,  padx=5, pady=5)
-        tk.Label(topFrame, text="Select Directory:").grid(row=0, column=0, sticky=tk.NSEW,  padx=5, pady=5)
-        tk.Entry(topFrame, textvariable=self.directory_path, width=50).grid(row=1, column=0, sticky=tk.NSEW,  padx=5, pady=5)
-        tk.Button(topFrame, text="Browse", command=self.browse_directory, width=15).grid(row=1, column=1, padx=5, pady=5,)
+            # Help Menu
+            help_menu = Menu(menu_bar, tearoff=0)
+            help_menu.add_command(label="About")
+            menu_bar.add_cascade(label="Help", menu=help_menu)
 
-        # Start monitoring button
-        self.startbutton = tk.Button(topFrame, text="Start Monitoring", command=self.start_monitoring, width=15, bg='lightgreen')
-        self.startbutton.grid(row=0, column=2, padx=5, pady=5)
-        # Quit button
-        self.quitbutton = tk.Button(topFrame, text="Stop Monitoring", command=self.stop_monitoring, width=15, bg="salmon", state=tk.DISABLED)
-        self.quitbutton.grid(row=1, column=2, padx=5, pady=5)
-        # Save button
-        self.savebutton = tk.Button(topFrame, text="Save", command=self.save_log, width=15, bg='dodgerblue', state=tk.ACTIVE)
-        self.savebutton.grid(row=2, column=2, padx=5, pady=5)
+            # create main containters
+            topFrame = tk.Frame(self.root)
+            middleFrame = tk.Frame(self.root)
+            bottomFrame = tk.Frame(self.root)
 
-        # Text box to display events
-        self.event_display = ttk.Treeview(middleFrame, columns=("event", "date", "time"), selectmode="browse")
-        self.event_display.heading("#0", text="File")
-        self.event_display.heading("event", text="Event")
-        self.event_display.heading("date", text="Date")
-        self.event_display.heading("time", text="Time")
-        self.event_display.grid(row=0, columnspan=3,  padx=5, pady=5, sticky=tk.NSEW)
+            # add subsections in grid format
+            topFrame.grid(row=0, column=0, sticky=tk.NSEW)
+            topFrame.columnconfigure(0, weight=1)
+            topFrame.columnconfigure(1, weight=1)
+            topFrame.columnconfigure(2, weight=1)
 
-        # Constructing vertical scrollbar
-        # with treeview
-        verscrlbar = ttk.Scrollbar(middleFrame,
-                                   orient ="vertical",
-                                   command = self.event_display.yview)
-        # Calling pack method w.r.to vertical
-        # scrollbar
-        verscrlbar.grid(row=0, column=3, sticky=tk.NS)
-        self.event_display.configure(xscrollcommand=verscrlbar.set)
+            middleFrame.grid(row=1, column=0,sticky=tk.NSEW)
+            middleFrame.columnconfigure(0, weight=1)
+            middleFrame.rowconfigure(0, weight=1)
+            middleFrame.columnconfigure(1, weight=1)
+            middleFrame.columnconfigure(2, weight=1)
+
+            bottomFrame.grid(row=2, column=0,sticky=tk.NSEW)
+            bottomFrame.columnconfigure(0, weight=1)
+            bottomFrame.columnconfigure(1, weight=1)
+            # bottomFrame.columnconfigure(2, weight=1)
+
+            self.run_status_var = tk.StringVar()
+            self.run_status_var.set("Idle . . .")
+            self.saved_db = tk.StringVar()
+            # self.saved_db.set('No Database Saved . . .')
+            run_status_label = tk.Label(topFrame, textvariable=self.run_status_var, wraplength=700).grid(row=2, column=0, sticky=tk.W,  padx=5, pady=5)
+            saved_db_label = tk.Label(topFrame, textvariable=self.saved_db).grid(row=3, column=2, sticky=tk.EW,  padx=5, pady=5)
+            tk.Label(topFrame, text="Select Directory:").grid(row=0, column=0, sticky=tk.NSEW,  padx=5, pady=5)
+            tk.Entry(topFrame, textvariable=self.directory_path, width=50).grid(row=1, column=0, sticky=tk.NSEW,  padx=5, pady=5)
+            tk.Button(topFrame, text="Browse", command=self.browse_directory, width=15).grid(row=1, column=1, padx=5, pady=5,)
+
+            # Start monitoring button
+            self.startbutton = tk.Button(topFrame, text="Start Monitoring", command=self.start_monitoring, width=15, bg='lightgreen')
+            self.startbutton.grid(row=0, column=2, padx=5, pady=5)
+            # Quit button
+            self.quitbutton = tk.Button(topFrame, text="Stop Monitoring", command=self.stop_monitoring, width=15, bg="salmon", state=tk.DISABLED)
+            self.quitbutton.grid(row=1, column=2, padx=5, pady=5)
+            # Save button
+            self.savebutton = tk.Button(topFrame, text="Save", command=self.save_log, width=15, bg='dodgerblue', state=tk.ACTIVE)
+            self.savebutton.grid(row=2, column=2, padx=5, pady=5)
+
+            # Text box to display events
+            self.event_display = ttk.Treeview(middleFrame, columns=("event", "date", "time"), selectmode="browse")
+            self.event_display.heading("#0", text="File")
+            self.event_display.heading("event", text="Event")
+            self.event_display.heading("date", text="Date")
+            self.event_display.heading("time", text="Time")
+            self.event_display.grid(row=0, columnspan=3,  padx=5, pady=5, sticky=tk.NSEW)
+
+            # Constructing vertical scrollbar
+            # with treeview
+            verscrlbar = ttk.Scrollbar(middleFrame,
+                                       orient ="vertical",
+                                       command = self.event_display.yview)
+            # Calling pack method w.r.to vertical
+            # scrollbar
+            verscrlbar.grid(row=0, column=3, sticky=tk.NS)
+            self.event_display.configure(xscrollcommand=verscrlbar.set)
 
 
-        # Save button
-        self.quit_savebutton = tk.Button(bottomFrame, text="Stop and Save", command=self.quit_and_save, width=15, bg='dodgerblue')
-        self.quit_savebutton.grid(row=0, column=0, padx=25, pady=5, sticky=tk.EW)
+            # Save button
+            self.quit_savebutton = tk.Button(bottomFrame, text="Stop and Save", command=self.quit_and_save, width=15, bg='dodgerblue')
+            self.quit_savebutton.grid(row=0, column=0, padx=25, pady=5, sticky=tk.EW)
 
-        # Save button
-        self.alert_button = tk.Button(bottomFrame, text="Alert Security Team", command=self.alert_security, width=15, bg='salmon')
-        self.alert_button.grid(row=0, column=1, padx=25, pady=5, sticky=tk.EW)
+            # Save button
+            self.alert_button = tk.Button(bottomFrame, text="Alert Security Team", command=self.alert_security, width=15, bg='salmon')
+            self.alert_button.grid(row=0, column=1, padx=25, pady=5, sticky=tk.EW)
 
+    def query_database(self):
+        """Function to query database and display results in a table."""
+        query_window = tk.Toplevel(self.root)
+        query_window.title("Database Query")
+        query_window.geometry("500x300")
 
+        tree = ttk.Treeview(query_window, columns=("File", "Event", "Date", "Time"), show='headings')
+        tree.heading("File", text="File")
+        tree.heading("Event", text="Event")
+        tree.heading("Date", text="Date")
+        tree.heading("Time", text="Time")
+        tree.pack(fill=tk.BOTH, expand=True)
+
+        files = self.model.get_all_files()
+        print(files)
+        # Convert FileClass instances to tuples
+        file_data = [(file.filename, file.event, file.date, file.time) for file in files]
+
+        # Insert into treeview
+        for row in file_data:
+            tree.insert("", "end", values=row)
 
     def browse_directory(self):
         """Open a directory dialog and set the selected directory path."""
@@ -124,7 +166,7 @@ class View():
             self.run_status_var.set(f"Currently monitoring: {directory}")
             # Initialize and start the FileWatcher
             directory_name = os.path.basename(directory)
-            self.model.set_table_name(directory_name)
+            #self.model.set_table_name(directory_name)
             all_files = self.model.get_all_files()
             for file in all_files:
                 print(file.file_name, file.event_type, file.date, file.time)

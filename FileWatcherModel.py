@@ -24,6 +24,9 @@ class FileModel:
         self.table_name = name
         self._initialize_database()
 
+    def set_db_path(self, db_path):
+        self.db_path = db_path
+
     # def update_file(self, file_name, event_type, date, time):
     #     self.warehouse.push(FileClass(file_name, event_type,date,time))
 
@@ -64,10 +67,13 @@ class FileModel:
 
     def get_all_files(self):
         """Retrieve all file metadata from the database."""
+        print(self.table_name)
         try:
             with self._get_connection() as conn:
-                cursor = conn.execute(f'''SELECT * FROM {self.table_name}''')
+                cursor = conn.cursor()
+                conn.execute(f'''SELECT * FROM {self.table_name}''')
                 rows = cursor.fetchall()
+                print(rows)
                 return [FileClass(row[1], row[2], row[3], row[4]) for row in rows]
         except sqlite3.Error as e:
             print(f"Database error: {e}")
@@ -98,11 +104,16 @@ class FileModel:
         savetime = time.strftime("%Y%m%d%H%M%S")
         tablename = "GuardDogLog_" + savetime
         dbname = tablename + ".db"
+        self.set_db_path(dbname)
+        self.set_table_name(tablename)
+
+
+       # self._initialize_database()
         conn = sqlite3.connect(dbname)
         cursor = conn.cursor()
 
         cursor.execute(f'''
-            CREATE TABLE IF NOT EXISTS {tablename} (
+            CREATE TABLE IF NOT EXISTS {self.table_name} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 filename TEXT NOT NULL,
                 event_type TEXT NOT NULL,
@@ -114,7 +125,7 @@ class FileModel:
         for i in range(self.warehouse.size):
             data = self.warehouse.pop()
             cursor.execute(f'''
-                INSERT INTO {tablename} (filename, event_type, date, time) VALUES (?, ?, ?, ?)
+                INSERT INTO {self.table_name} (filename, event_type, date, time) VALUES (?, ?, ?, ?)
                 ''', (data.file_name, data.event_type, data.date, data.time,))
 
         conn.commit()
