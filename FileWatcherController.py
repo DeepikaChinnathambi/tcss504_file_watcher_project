@@ -56,9 +56,10 @@ class FileWatcherHandler(FileSystemEventHandler):
             # save it to the "warehouse" with event object , date and time
             self.cur_time = time.strftime("%H:%M:%S")
             self.cur_date = time.strftime("%Y-%m-%d")
-            filename = os.path.basename(event.src_path)
+            filename_with_ext = os.path.basename(event.src_path)
+            filename, file_extension = os.path.splitext(filename_with_ext)
 
-            #self.model.update_file(filename, event.event_type, self.cur_date, self.cur_time)
-            self.view.display_event(filename, event.event_type, self.cur_date, self.cur_time)
+            self.model.update_file(filename, file_extension, event.event_type, self.cur_date, self.cur_time)
+            self.view.display_event(filename, file_extension, event.event_type, self.cur_date, self.cur_time)
             # print("Watchdog received %s event - %s at %s on %s" % (event.event_type, event.src_path, cur_time, cur_date))
 
