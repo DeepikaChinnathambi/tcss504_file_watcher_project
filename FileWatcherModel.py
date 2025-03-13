@@ -1,9 +1,11 @@
+import SecurityMonitor
 from File import FileClass
 from DataWarehouse import DataWarehouse
 import sqlite3
 import time
 import threading
 from SecurityMonitor import *
+import zipfile
 
 class FileModel:
     """Stores and manages file metadata."""
@@ -158,7 +160,10 @@ class FileModel:
 
 
     def alert_security(self, db_file):
-        SecurityMonitor
+        db_base = db_file.split('.')[0]
+        zip_db = zipfile.ZipFile(f'{db_base}.zip', mode='w').write(db_file)
+        security = SecurityMonitor(db_file=f'{db_base}.zip')
+        security.send_email()
 
 
 

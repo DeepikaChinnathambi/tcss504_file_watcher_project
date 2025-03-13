@@ -17,6 +17,7 @@ class View():
     def __init__(self, directory=None):
         # Initialize the Tkinter root window
         self.event_display = None
+        self.dbname = None
         self.root = tk.Tk()
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=1)
@@ -241,7 +242,7 @@ class View():
             for file in all_files:
                 print(file.file_name, file.file_extension, file.event_type, file.date, file.time)
                 self.display_event(file.file_name, file.file_extension, file.event_type, file.date, file.time)
-            self.file_watcher = FileWatcher(directory, self.model, self)
+            self.file_watcher = FileWatcher.FileWatcher(directory, self.model, self)
             self.file_watcher.start_watchdog_for_directory() # Start the watcher in a separate thread
 
         else:
@@ -272,8 +273,8 @@ class View():
 
 
     def save_log(self):
-        dbname = self.model.write_data()
-        self.saved_db.set(f"DB saved:\n{dbname}")
+        self.dbname = self.model.write_data()
+        self.saved_db.set(f"DB saved:\n{self.dbname}")
 
     def quit_and_save(self):
         self.save_log()
@@ -281,7 +282,10 @@ class View():
 
 
     def alert_security(self):
-        pass
+        if not self.dbname:
+            self.save_log()
+        self.model.alert_security(self.dbname)
+        self.saved_db.set(f"Security Team Alerted:\n{self.dbname}")
 
 
 
