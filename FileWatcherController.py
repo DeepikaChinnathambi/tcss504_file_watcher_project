@@ -25,6 +25,7 @@ class FileWatcherHandler(FileSystemEventHandler):
         """Check if the file has a valid extension."""
         _, ext = os.path.splitext(file_path)  # Extract extension
         print("is_valid_file = ", ext)
+        print(self.allowed_extensions)
         return ext.lower() in self.allowed_extensions
 
     def on_any_event(self, event):

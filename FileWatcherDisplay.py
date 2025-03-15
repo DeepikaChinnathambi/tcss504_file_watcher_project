@@ -45,8 +45,10 @@ class View():
 
         selected_ext = self.combobox.get()
         if selected_ext == "All":
+            print("ALLLLLLLLLL")
             self.allowed_extensions = {".pdf", ".txt", ".bmp", ".docx"}
         else:
+            print(selected_ext)
             self.allowed_extensions = {selected_ext}
 
 
@@ -271,6 +273,7 @@ class View():
         self.run_status_var.set(f"Stopped Monitoring: {self.directory_path.get()}")
         self.startbutton["state"] = tk.ACTIVE
         self.quitbutton['state'] = tk.DISABLED
+        self.file_watcher = None
         # self.savebutton["state"] = tk.ACTIVE
 
 

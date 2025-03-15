@@ -14,8 +14,8 @@ class FileWatcher:
 
     def start_watchdog_for_directory(self):
         print("start watchdog on ", self.watch_directory)
-        watchdog = WatchDogImpl(self.watch_directory, self.event_handler,self.view)
-        watchdog.watch()
+        self.watchdog = WatchDogImpl(self.watch_directory, self.event_handler,self.view)
+        self.watchdog.watch()
 
 
     def stop_watchdog(self):
