@@ -24,6 +24,8 @@ class View():
         self.root.title("Guard Dog 🐶")
         self.root.geometry("750x500")
         # self.root.resizable(False, False)
+        self.combobox = None
+        self.allowed_extensions = {".pdf", ".txt", ".bmp", ".docx"}
 
         # Directory selection
         self.directory_path = tk.StringVar()
@@ -32,6 +34,21 @@ class View():
         # Model and FileWatcher
         self.model = FileModel()
         self.file_watcher = None  # Will be initialized when monitoring starts
+
+
+
+    def update_extension_filter(self,event):
+
+        if not self.combobox:  # Prevents accessing None
+            print("Error: Combobox not initialized!")
+            return
+
+        selected_ext = self.combobox.get()
+        if selected_ext == "All":
+            self.allowed_extensions = {".pdf", ".txt", ".bmp", ".docx"}
+        else:
+            self.allowed_extensions = {selected_ext}
+
 
 
     def create_widgets(self):
@@ -47,11 +64,6 @@ class View():
             file_menu.add_separator()
             file_menu.add_command(label="Exit", command=self.root.quit, accelerator="Ctrl+X")
             menu_bar.add_cascade(label="File", menu=file_menu, accelerator="Ctrl+F")
-
-            # Edit Menu
-            edit_menu = Menu(menu_bar, tearoff=0)
-            edit_menu.add_command(label="Preferences")
-            menu_bar.add_cascade(label="Edit", menu=edit_menu)
 
             # Help Menu
             help_menu = Menu(menu_bar, tearoff=0)
@@ -101,10 +113,14 @@ class View():
             tk.Label(topFrame, text="Monitor By Extension :").grid(row=1, column=0, sticky=tk.NSEW, padx=5, pady=5)
             tk.Label(topFrame, text="Select Directory:").grid(row=1, column=1, sticky=tk.NSEW,  padx=5, pady=5)
 
-            options = ["All", ".txt", ".docx", ".bmp"]
-            combobox = ttk.Combobox(topFrame, values=options, width=10)
-            combobox.grid(row=2, column=0, sticky=tk.NSEW,  padx=5, pady=5)
-            combobox.set("ALL")
+            options = ["All", ".txt", ".docx", ".bmp", ".pdf"]
+            self.combobox = ttk.Combobox(topFrame, values=options, width=10)
+            self.combobox.grid(row=2, column=0, sticky=tk.NSEW,  padx=5, pady=5)
+            self.combobox.set("All")
+            self.combobox.bind("<<ComboboxSelected>>", self.update_extension_filter)
+
+            self.update_extension_filter(None)
+
 
             tk.Entry(topFrame, textvariable=self.directory_path, width=10).grid(row=2, column=1, sticky=tk.NSEW,  padx=5, pady=5)
             tk.Button(topFrame, text="Browse", command=self.browse_directory, width=15).grid(row=2, column=2, padx=5, pady=5,)
@@ -154,8 +170,9 @@ class View():
             self.alert_button = tk.Button(bottomFrame, text="Alert Security Team", command=self.alert_security, width=15, bg='salmon')
             self.alert_button.grid(row=0, column=1, padx=25, pady=5, sticky=tk.EW)
 
+
     def show_about(self): # TODO:
-        messagebox.showinfo("About", "Developer: Your Name\nVersion: 1.0\nDescription: This is a sample application.")
+        messagebox.showinfo("About", "Developer: Deepika Chinnathambi, Liam Wilkenson \nVersion: 1.0\nDescription: This is a File Watcher application.\n Watches a directory for any changes in that path, includes modifying, creating, or deleting a file")
 
     def query_database(self):
         """Function to query database and display results in a table."""
@@ -242,7 +259,7 @@ class View():
             for file in all_files:
                 print(file.file_name, file.file_extension, file.event_type, file.date, file.time)
                 self.display_event(file.file_name, file.file_extension, file.event_type, file.date, file.time)
-            self.file_watcher = FileWatcher.FileWatcher(directory, self.model, self)
+            self.file_watcher = FileWatcher(directory, self.model, self, self.allowed_extensions)
             self.file_watcher.start_watchdog_for_directory() # Start the watcher in a separate thread
 
         else:

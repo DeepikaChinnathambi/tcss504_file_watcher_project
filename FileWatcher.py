@@ -5,11 +5,11 @@ from FileWatcherDisplay import *
 from WatchDogImpl import WatchDogImpl
 
 class FileWatcher:
-    def __init__(self, directory_to_watch, fw_model, fw_view):
+    def __init__(self, directory_to_watch, fw_model, fw_view, allowed_exts):
         self.watch_directory = directory_to_watch
         self.warehouse = DataWarehouse()
         self.view = fw_view
-        self.event_handler = FileWatcherHandler(fw_model, fw_view)
+        self.event_handler = FileWatcherHandler(fw_model, fw_view, allowed_exts)
         self.watchdog = None
 
     def start_watchdog_for_directory(self):
