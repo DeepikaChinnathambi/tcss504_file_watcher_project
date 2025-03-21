@@ -45,7 +45,6 @@ class View():
 
         selected_ext = self.combobox.get()
         if selected_ext == "All":
-            print("ALLLLLLLLLL")
             self.allowed_extensions = {".pdf", ".txt", ".bmp", ".docx"}
         else:
             print(selected_ext)

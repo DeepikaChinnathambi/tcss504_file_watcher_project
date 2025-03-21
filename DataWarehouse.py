@@ -9,34 +9,34 @@ class DataWarehouse:
 
 
     def __init__(self):
-        self.top = None
-        self.size = 0
+        self._top = None
+        self._size = 0
 
 
     def is_empty(self):
-        return self.size == 0
+        return self._size == 0
 
 
     def push(self, data):
         if data is not None:
             n = DataWarehouse.Node(data)
             if self.is_empty():
-                self.top = n
+                self._top = n
             else:
-                n.next = self.top
-                self.top = n
+                n.next = self._top
+                self._top = n
 
-            self.size += 1
+            self._size += 1
 
 
     def pop(self):
         if self.is_empty():
             return None
         else:
-            r = self.top
-            self.top = self.top.next
+            r = self._top
+            self._top = self._top.next
 
-        self.size -= 1
+        self._size -= 1
         return r.data
 
 
@@ -44,7 +44,7 @@ class DataWarehouse:
         if self.is_empty():
             return None
         else:
-            return self.top.data
+            return self._top.data
 
 
 

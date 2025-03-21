@@ -21,11 +21,11 @@ class TestFileModel(unittest.TestCase):
         conn = self.model._get_connection()
         cursor = conn.cursor()
 
-        cursor.execute(f"SELECT * FROM {self.model.table_name}")
+        cursor.execute(f"SELECT * FROM {self.model._table_name}")
         rows = cursor.fetchall()
         print("Database content after write_data():", rows)  # Debugging
 
-        cursor.execute(f"SELECT * FROM {self.model.table_name} WHERE filename = ?", ("test.txt",))
+        cursor.execute(f"SELECT * FROM {self.model._table_name} WHERE filename = ?", ("test.txt",))
         row = cursor.fetchone()
 
         self.assertIsNotNone(row)  # Ensure a record was inserted
@@ -60,19 +60,19 @@ class TestFileModel(unittest.TestCase):
 
     def test_database_error_handling(self):
         """Test handling of database errors gracefully."""
-        self.model.table_name = "nonexistent_table"  # Set a wrong table name
+        self.model._table_name = "nonexistent_table"  # Set a wrong table name
         file_info = self.model.get_file_info("test.txt")
         self.assertIsNone(file_info)  # Should not crash, should return None
 
     def test_write_data(self):
         """Test writing stored warehouse data to the database."""
-        self.model.warehouse.push(FileClass("stored.log", ".log", "created", "2025-03-13", "11:00:00"))
+        self.model._warehouse.push(FileClass("stored.log", ".log", "created", "2025-03-13", "11:00:00"))
         db_file = self.model.write_data()
 
         # Ensure data was written
         conn = sqlite3.connect(db_file)
         cursor = conn.cursor()
-        cursor.execute(f"SELECT * FROM {self.model.table_name} WHERE filename = ?", ("stored.log",))
+        cursor.execute(f"SELECT * FROM {self.model._table_name} WHERE filename = ?", ("stored.log",))
         row = cursor.fetchone()
 
         self.assertIsNotNone(row)

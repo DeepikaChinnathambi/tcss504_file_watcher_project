@@ -10,41 +10,32 @@ import zipfile
 class FileModel:
     """Stores and manages file metadata."""
     def __init__(self, db_path="file_watcher_v1.db"):
-        self.warehouse = DataWarehouse()  # Optional: Keep in-memory storage
-        self.db_path = db_path
-        self.local = threading.local()  # Thread-local storage
-        self.table_name = None
+        self._warehouse = DataWarehouse()  # Optional: Keep in-memory storage
+        self._db_path = db_path
+        self._local = threading.local()  # Thread-local storage
+        self._table_name = None
         self._initialize_database()
 
     def _get_connection(self):
         """Get a database connection for the current thread."""
-        if not hasattr(self.local, "connection"):
-            self.local.connection = sqlite3.connect(self.db_path, check_same_thread=False)
-        return self.local.connection
+        if not hasattr(self._local, "connection"):
+            self._local.connection = sqlite3.connect(self._db_path, check_same_thread=False)
+        return self._local.connection
 
 
     def set_table_name(self, name):
-        self.table_name = name
+        self._table_name = name
 
 
     def set_db_path(self, db_path):
-        self.db_path = db_path
-
-    # def update_file(self, file_name, event_type, date, time):
-    #     self.warehouse.push(FileClass(file_name, event_type,date,time))
-
-    # def get_all_files(self):
-    #     return self.warehouse.peek()
-
-    # def get_file_info(self, file_name):
-    #     return self.warehouse.peek()
+        self._db_path = db_path
 
     def _initialize_database(self):
         """Initialize the database (create tables if they don't exist)."""
         try:
             with self._get_connection() as conn:
                 conn.execute(f'''
-                    CREATE TABLE IF NOT EXISTS {self.table_name} (
+                    CREATE TABLE IF NOT EXISTS {self._table_name} (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         file_name TEXT NOT NULL UNIQUE,
                         file_extension TEXT NOT NULL,
@@ -60,18 +51,13 @@ class FileModel:
     def update_file(self, file_name, file_extension, event_type, date, time):
         """Update or insert file metadata into the database."""
         try:
-            self.warehouse.push(FileClass(file_name, file_extension, event_type, date, time))
-            # with self._get_connection() as conn:
-            #     # Insert or replace file metadata
-            #     conn.execute(f'''INSERT OR REPLACE INTO {self.table_name} (file_name, event_type, date, time)
-            #         VALUES (?, ?, ?, ?)'''  , (file_name, event_type, date, time))
-            #     print(f"Updated file in database: {file_name} - {event_type}")
+            self._warehouse.push(FileClass(file_name, file_extension, event_type, date, time))
         except sqlite3.Error as e:
             print(f"Database error: {e}")
 
     def get_all_files(self):
         """Retrieve all file metadata from the database."""
-        print(self.table_name)
+        print(self._table_name)
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
@@ -108,7 +94,7 @@ class FileModel:
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute(f'''
-                    SELECT * FROM {self.table_name} WHERE filename = ?
+                    SELECT * FROM {self._table_name} WHERE filename = ?
                 ''', (file_name,))
                 row = cursor.fetchone()
                 print(row)
@@ -121,8 +107,8 @@ class FileModel:
 
     def close_connection(self):
         """Close the database connection."""
-        if hasattr(self.local, "connection"):
-            self.local.connection.close()
+        if hasattr(self._local, "connection"):
+            self._local.connection.close()
             print("Database connection closed.")
 
     def write_data(self):
@@ -132,11 +118,11 @@ class FileModel:
 
 
        # self._initialize_database()
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self._db_path)
         cursor = conn.cursor()
 
         cursor.execute(f'''
-            CREATE TABLE IF NOT EXISTS {self.table_name} (
+            CREATE TABLE IF NOT EXISTS {self._table_name} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 filename TEXT NOT NULL,
                 file_extension TEXT NOT NULL,
@@ -146,17 +132,17 @@ class FileModel:
                 )
             ''')
 
-        for i in range(self.warehouse.size):
-            data = self.warehouse.pop()
+        for i in range(self._warehouse._size):
+            data = self._warehouse.pop()
             cursor.execute(f'''
-                INSERT INTO {self.table_name} (filename, file_extension, event_type, date, time) VALUES (?, ?, ?, ?, ?)
+                INSERT INTO {self._table_name} (filename, file_extension, event_type, date, time) VALUES (?, ?, ?, ?, ?)
                 ''', (data.file_name, data.file_extension, data.event_type, data.date, data.time,))
 
         conn.commit()
         conn.close()
 
 
-        return self.db_path
+        return self._db_path
 
 
     def alert_security(self, db_file):
