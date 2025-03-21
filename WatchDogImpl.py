@@ -12,9 +12,9 @@ class WatchDogImpl:
     def watch(self):
         self.watchdogObserver.schedule(self.event_handler, self.watch_directory, recursive=True)
         self.watchdogObserver.start()
-        self.view.run()
         self.running = True
         print(f"Started watching: {self.watch_directory}")
+        self.view.run()
         try:
             while self.running:  # Use a flag to control the loop
                 time.sleep(0.1)
@@ -27,7 +27,9 @@ class WatchDogImpl:
 
     def stop(self):
         """Stop watching the directory."""
+        print("stop called")
         if self.running:
+            print("stop called1")
             self.running = False
             self.watchdogObserver.stop()
             self.watchdogObserver.join()

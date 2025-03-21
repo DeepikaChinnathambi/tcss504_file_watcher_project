@@ -1,7 +1,9 @@
+from email.mime.multipart import MIMEMultipart
+
 from observable import Observable
 import base64
 import mimetypes
-import os
+import os.path
 from email.message import EmailMessage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
@@ -10,6 +12,15 @@ from email.mime.text import MIMEText
 
 # make sure you pip install the following command
 # pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+import base64
+from email.message import EmailMessage
+
 import google.auth
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -17,12 +28,11 @@ from googleapiclient.errors import HttpError
 """currently mostly copied from https://developers.google.com/gmail/api/guides/sending#python from Tom"""
 
 class SecurityMonitor:
-    def __init__(self, db_file=None):
-        if db_file is None:
-            self.db = None
-        else:
-            self.db = db_file
-        pass
+    def __init__(self, db_file=None, message=None, subject=None):
+
+        self.db_file = db_file
+        self.message = message if message is not None else "This is an automated alert message from Guard Dog. Please see attached .zip file for log database."
+        self.subject = subject if subject is not None else "File Watcher Log"
 
 
     def send_email(self):
@@ -34,48 +44,72 @@ class SecurityMonitor:
         TODO(developer) - See https://developers.google.com/identity
         for guides on implementing OAuth2 for the application.
         """
-        creds, _ = google.auth.default()
+
 
         try:
+            # creds, _ = google.auth.default()
+
+            # If modifying these scopes, delete the file token.json.
+            SCOPES = ["https://mail.google.com/"]
+
+            creds = None
+            # The file token.json stores the user's access and refresh tokens, and is
+            # created automatically when the authorization flow completes for the first
+            # time.
+            if os.path.exists("token.json"):
+                creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+            # If there are no (valid) credentials available, let the user log in.
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+                else:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        "token.json", SCOPES
+                    )
+                    creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open("token.json", "w") as token:
+              token.write(creds.to_json())
+
             # create gmail api client
             service = build("gmail", "v1", credentials=creds)
-            mime_message = EmailMessage()
+            message = EmailMessage()
 
-            # headers
-            mime_message["To"] = "gduser1@workspacesamples.dev"
-            mime_message["From"] = "gduser2@workspacesamples.dev"
-            mime_message["Subject"] = "sample with attachment"
+            # Log in info
+            # receiver PW - filereceiver1!
+            # sender PW - filesender1234!
+            message["To"] = "filereceiver99@gmail.com"
+            message["From"] = "filewatchersender@gmail.com"
+            message["Subject"] = self.subject
 
             # text
-            mime_message.set_content(
-                "Hi, this is automated mail with attachment.Please do not reply."
-            )
+            message.set_content(self.message)
 
-            # attachment
-            attachment_filename = "photo.jpg"
             # guessing the MIME type
-            type_subtype, _ = mimetypes.guess_type(attachment_filename)
+            type_subtype, _ = mimetypes.guess_type(self.db_file)
             maintype, subtype = type_subtype.split("/")
 
-            with open(attachment_filename, "rb") as fp:
+            with open(self.db_file, "rb") as fp:
                 attachment_data = fp.read()
-            mime_message.add_attachment(attachment_data, maintype, subtype)
+            message.add_attachment(attachment_data, maintype, subtype)
 
-            encoded_message = base64.urlsafe_b64encode(mime_message.as_bytes()).decode()
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
-            create_draft_request_body = {"message": {"raw": encoded_message}}
+            create_message = {"raw": encoded_message}
             # pylint: disable=E1101
-            draft = (
+            send_message = (
                 service.users()
-                .drafts()
-                .create(userId="me", body=create_draft_request_body)
+                .messages()
+                .send(userId="me", body=create_message)
                 .execute()
             )
-            print(f'Draft id: {draft["id"]}\nDraft message: {draft["message"]}')
+            print(f'Message id: {send_message["id"]}\nMessage message: {send_message}')
+
         except HttpError as error:
             print(f"An error occurred: {error}")
-            draft = None
-        return draft
+            send_message = None
+
+        return send_message
 
 
     def build_file_part(self, file):
@@ -112,6 +146,8 @@ class SecurityMonitor:
         filename = os.path.basename(file)
         msg.add_header("Content-Disposition", "attachment", filename=filename)
         return msg
+
+
 
 
 
